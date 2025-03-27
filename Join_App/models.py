@@ -30,12 +30,13 @@ class Task(models.Model):
     PRIORITY_CHOICES = [
         ('low', 'Low'),
         ('medium', 'Medium'),
-        ('high', 'High'),
+        ('urgent', 'Urgent'),
     ]
     
     CATEGORY_CHOICES = [
         ('todo', 'To Do'),
         ('inprogress', 'In Progress'),
+        ('awaitfeedback','Await Feedback'),
         ('done', 'Done'),
     ]
     

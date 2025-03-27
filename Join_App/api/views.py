@@ -1,145 +1,132 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from django.http import JsonResponse
 from Join_App.models import User, Task, Contact, Subtask
 from .serializers import ContactSerializer, TaskSerializer, UserSerializer
 
-@api_view(['GET'])
-def first_view(request):
-    return Response({"message": "Hello World!"})
 
 class ContactViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing contacts.
+    Provides CRUD operations and additional functionality.
+    """
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
-    
+
+    def get_serializer(self, *args, **kwargs):
+        """
+        Handle both single item and list serialization.
+        """
+        if isinstance(kwargs.get('data', {}), list):
+            kwargs['many'] = True
+        return super().get_serializer(*args, **kwargs)
+
     def list(self, request):
+        """
+        Get all contacts.
+        """
         contacts = self.get_queryset()
         serializer = self.get_serializer(contacts, many=True)
         return Response(serializer.data)
     
     def create(self, request):
-        data = request.data
-        
-        # Handle both single contact and list of contacts
-        many = isinstance(data, list)
-        serializer = self.get_serializer(data=data, many=many)
+        """
+        Create one or multiple contacts.
+        """
+        serializer = self.get_serializer(data=request.data)
         
         if serializer.is_valid():
             serializer.save()
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def destroy(self, request, *args, **kwargs):
-        try:
-            data = request.data
-            contact_id = data.get('contactID')
-            
-            if not contact_id:
-                return Response({"status": "error", "message": "No contactID provided"}, 
-                                status=status.HTTP_400_BAD_REQUEST)
-            
-            contact = Contact.objects.get(id=contact_id)
-            contact.delete()
-            return Response({"status": "success"}, status=status.HTTP_200_OK)
-        except Contact.DoesNotExist:
-            return Response({"status": "error", "message": "Contact not found"}, 
-                            status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"status": "error", "message": str(e)}, 
-                            status=status.HTTP_400_BAD_REQUEST)
+
 
 class TaskViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing tasks.
+    Provides CRUD operations and additional functionality.
+    """
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     
+    def get_serializer(self, *args, **kwargs):
+        """
+        Handle both single item and list serialization.
+        """
+        if isinstance(kwargs.get('data', {}), list):
+            kwargs['many'] = True
+        return super().get_serializer(*args, **kwargs)
+    
     def list(self, request):
+        """
+        Get all tasks.
+        """
         tasks = self.get_queryset()
         serializer = self.get_serializer(tasks, many=True)
         return Response(serializer.data)
     
     def create(self, request):
-        data = request.data
-        
-        # Handle both single task and list of tasks
-        many = isinstance(data, list)
-        serializer = self.get_serializer(data=data, many=many)
+        """
+        Create one or multiple tasks.
+        """
+        serializer = self.get_serializer(data=request.data)
         
         if serializer.is_valid():
-            serializer.save()
+            instance = serializer.save()
             
-            # For single task
-            if not many:
-                if hasattr(serializer.instance, 'id'):
-                    return Response({"status": "success", "taskID": serializer.instance.id}, 
-                                status=status.HTTP_201_CREATED)
-            # For multiple tasks
-            else:
-                return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+            # For single task, return the ID
+            if not isinstance(request.data, list) and hasattr(instance, 'id'):
+                return Response(
+                    {"status": "success", "taskID": instance.id}, 
+                    status=status.HTTP_201_CREATED
+                )
                 
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def update(self, request, *args, **kwargs):
-        try:
-            data = request.data
-            task_id = data.get('taskID')
-            
-            if not task_id:
-                return Response({"status": "error", "message": "No taskID provided"}, 
-                                status=status.HTTP_400_BAD_REQUEST)
-            
-            task = Task.objects.get(id=task_id)
-            serializer = self.get_serializer(task, data=data, partial=True)
-            
-            if serializer.is_valid():
-                serializer.save()
-                return Response({"status": "success"}, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-        except Task.DoesNotExist:
-            return Response({"status": "error", "message": "Task not found"}, 
-                            status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"status": "error", "message": str(e)}, 
-                            status=status.HTTP_400_BAD_REQUEST)
-    
-    def destroy(self, request, *args, **kwargs):
-        try:
-            data = request.data
-            task_id = data.get('taskID')
-            
-            if not task_id:
-                return Response({"status": "error", "message": "No taskID provided"}, 
-                                status=status.HTTP_400_BAD_REQUEST)
-            
-            task = Task.objects.get(id=task_id)
-            task.delete()
-            return Response({"status": "success"}, status=status.HTTP_200_OK)
-        except Task.DoesNotExist:
-            return Response({"status": "error", "message": "Task not found"}, 
-                            status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"status": "error", "message": str(e)}, 
-                            status=status.HTTP_400_BAD_REQUEST)
+
 
 class UserViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing users.
+    Provides CRUD operations.
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     
+    def get_serializer(self, *args, **kwargs):
+        """
+        Handle both single item and list serialization.
+        """
+        if isinstance(kwargs.get('data', {}), list):
+            kwargs['many'] = True
+        return super().get_serializer(*args, **kwargs)
+    
     def list(self, request):
+        """
+        Get all users.
+        """
         users = self.get_queryset()
         serializer = self.get_serializer(users, many=True)
         return Response(serializer.data)
     
     def create(self, request):
-        data = request.data
-        
-        # Handle both single user and list of users
-        many = isinstance(data, list)
-        serializer = self.get_serializer(data=data, many=many)
+        """
+        Create one or multiple users.
+        """
+        serializer = self.get_serializer(data=request.data)
         
         if serializer.is_valid():
             serializer.save()
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def hello_world(request):
+    """
+    Simple hello world endpoint.
+    """
+    return Response({"message": "Hello World!"})
