@@ -2,21 +2,20 @@ from rest_framework import serializers
 from user_auth_app.models import UserProfile
 from django.contrib.auth.models import User
 
-class UserProfileSerializer(serializers.ModelSerializer):
+""" class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['user', 'bio', 'location']
+        fields = ['user', 'email'] """
 
 class RegistrationSerializer(serializers.ModelSerializer):
-    repeated_password = serializers.CharField(write_only=True)
+    repeated_password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
         fields = ['username', 'email', 'password', 'repeated_password']
         extra_kwargs = {
-            'password': {
-                'write_only': True
-            }
+            'password': {'write_only': True},
+            'id': {'read_only': True}
         }
     
     def save(self):
