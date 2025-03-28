@@ -1,12 +1,15 @@
-from rest_framework import generics
+from rest_framework import generics, status
 from user_auth_app.models import UserProfile
-from .serializers import UserProfileSerializer
+from .serializers import UserProfileSerializer, RegistrationSerializer
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .serializers import RegistrationSerializer
 from rest_framework.authtoken.models import Token
-from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.response import Response
+from django.contrib.auth.models import User  # Diese Zeile wurde hinzugefügt
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserProfileList(generics.ListCreateAPIView):
     queryset = UserProfile.objects.all()
