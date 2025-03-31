@@ -1,7 +1,7 @@
 from django.db import models
 #from phonenumber_field.modelfields import PhoneNumberField
+from django.contrib.auth import get_user_model
 
-from django.db import models
 
 class User(models.Model):
     username = models.CharField(max_length=50, unique=True)
@@ -10,6 +10,10 @@ class User(models.Model):
     
     def __str__(self):
         return self.username
+
+#class Board(models.Model):
+#    owner = models.ForeignKey(get_user_model=(), on_delete=models.CASCADE, related_name="board")
+#    name = models.CharField(max_length=20, default="", blank=True)
 
 class Contact(models.Model):
     name = models.CharField(max_length=100)

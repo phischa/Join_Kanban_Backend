@@ -5,6 +5,13 @@ from django.http import JsonResponse
 from Join_App.models import User, Task, Contact, Subtask
 from .serializers import ContactSerializer, TaskSerializer, UserSerializer
 
+#BoardSerializer
+
+#class BoardViewSet(viewsets,ModelViewset):
+#    queryset = Board.objects.all()
+#    serializer_class = BoardSerializer
+#    permission_classes = [isOwner]
+
 class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
