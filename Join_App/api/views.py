@@ -2,9 +2,13 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from django.http import JsonResponse
-from Join_App.models import User, Task, Contact, Subtask
+from django.contrib.auth.models import User
+from Join_App.models import Task, Contact, Subtask
 from .serializers import ContactSerializer, TaskSerializer, UserSerializer
+from rest_framework.permissions import IsAuthenticated
 
+
+#UserSerializer
 #BoardSerializer
 
 #class BoardViewSet(viewsets,ModelViewset):
@@ -15,6 +19,7 @@ from .serializers import ContactSerializer, TaskSerializer, UserSerializer
 class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
+    permission_classes = [IsAuthenticated]  # Optional: Require authentication
 
     def get_serializer(self, *args, **kwargs):
         """
@@ -38,8 +43,19 @@ class ContactViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class TaskViewSet(viewsets.ModelViewSet):
-    queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]  # Optional: Require authentication
+    
+    def get_queryset(self):
+        # Filter tasks by authenticated user
+        if self.request.user.is_authenticated:
+            return Task.objects.filter(user=self.request.user)
+        return Task.objects.none()
+    
+    def get_serializer_context(self):
+        # Pass request to serializer for user access
+        context = super().get_serializer_context()
+        return context
     
     def get_serializer(self, *args, **kwargs):
         """
@@ -68,11 +84,17 @@ class TaskViewSet(viewsets.ModelViewSet):
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
-
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
     serializer_class = UserSerializer
+    
+    def get_queryset(self):
+        # If admin, show all users. Otherwise, only show the current user
+        user = self.request.user
+        if user.is_authenticated:
+            if user.is_staff:
+                return User.objects.all()
+            return User.objects.filter(id=user.id)
+        return User.objects.none()
     
     def get_serializer(self, *args, **kwargs):
         """
@@ -88,13 +110,14 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     def create(self, request):
+        # Note: This should normally be handled by the registration view
+        # But keeping it for completeness/admin functionality
         serializer = self.get_serializer(data=request.data)
         
         if serializer.is_valid():
             serializer.save()
             return Response({"status": "success"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['GET'])
 def hello_world(request):

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from Join_App.models import User, Task, Contact, Subtask
+from Join_App.models import Task, Contact, Subtask
+from django.contrib.auth.models import User
 
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,9 +41,14 @@ class TaskSerializer(serializers.ModelSerializer):
         assigned_to_data = validated_data.pop('assignedTo', [])
         subtasks_data = validated_data.pop('subtasks', [])
         
-        # Get default user
-        default_user = User.objects.first()
-        task = Task.objects.create(user=default_user, **validated_data)
+        # Get the authenticated user from the request context
+        user = self.context['request'].user if 'request' in self.context else None
+        
+        # Fallback to first user if not authenticated (for development/testing only)
+        if not user or not user.is_authenticated:
+            user = User.objects.first()
+            
+        task = Task.objects.create(user=user, **validated_data)
         
         # Add contacts
         for contact_data in assigned_to_data:
@@ -109,3 +115,11 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['userID', 'name', 'email', 'password']
         extra_kwargs = {'password': {'write_only': True}}
+    
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['name'],
+            email=validated_data.get('email', ''),
+            password=validated_data.get('password', '')
+        )
+        return user

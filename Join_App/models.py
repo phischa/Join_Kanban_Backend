@@ -1,15 +1,15 @@
 from django.db import models
-#from phonenumber_field.modelfields import PhoneNumberField
+from django.contrib.auth.models import User 
 from django.contrib.auth import get_user_model
 
 
-class User(models.Model):
-    username = models.CharField(max_length=50, unique=True)
-    email = models.EmailField(max_length=255, unique=True)
-    password = models.CharField(max_length=255, null=True, blank=True)  # In production, use proper authentication
-    
-    def __str__(self):
-        return self.username
+#class User(models.Model):
+#    username = models.CharField(max_length=50, unique=True)
+#    email = models.EmailField(max_length=255, unique=True)
+#   password = models.CharField(max_length=255, null=True, blank=True)  # In production, use proper authentication
+#    
+#    def __str__(self):
+#        return self.username
 
 #class Board(models.Model):
 #    owner = models.ForeignKey(get_user_model=(), on_delete=models.CASCADE, related_name="board")
