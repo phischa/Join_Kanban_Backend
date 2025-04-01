@@ -35,7 +35,7 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ['taskID', 'title', 'description', 'assignedTo', 'dueDate', 
-                 'priority', 'category', 'subtasks', 'currentProgress']
+                'priority', 'category', 'subtasks', 'currentProgress']
 
     def create(self, validated_data):
         assigned_to_data = validated_data.pop('assignedTo', [])
