@@ -4,7 +4,7 @@ from .views import ContactViewSet, TaskViewSet, UserViewSet, hello_world
 
 # Create a router and register our viewsets with it
 router = DefaultRouter()
-router.register(r'contacts', ContactViewSet)
+router.register(r'contacts', ContactViewSet, basename='contact')
 router.register(r'tasks', TaskViewSet, basename='task')
 router.register(r'users', UserViewSet, basename='user')  
 

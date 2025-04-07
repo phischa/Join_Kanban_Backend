@@ -5,14 +5,46 @@ from django.contrib.auth.models import User
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
-        fields = ['id', 'name', 'email', 'phone', 'color']
+        fields = ['id', 'name', 'email', 'phone', 'color', 'user']
         read_only_fields = ['id']
     
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['contactID'] = data.pop('id')
         data['initials'] = instance.get_initials()
+        
+        # Remove the user field from the response
+        if 'user' in data:
+            data.pop('user')
+            
         return data
+    
+    def create(self, validated_data):
+        # Get the authenticated user from the request context
+        user = self.context['request'].user if 'request' in self.context else None
+        
+        # Ensure user is authenticated
+        if not user or not user.is_authenticated:
+            raise serializers.ValidationError({"user": "User must be authenticated to create contacts"})
+        
+        # Set the user without requiring it in the request data
+        validated_data['user'] = user
+        
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        # Get the authenticated user from the request context
+        user = self.context['request'].user if 'request' in self.context else None
+        
+        # Only allow update if the contact belongs to the authenticated user
+        if instance.user != user:
+            raise serializers.ValidationError({"error": "You can only update your own contacts"})
+        
+        # Don't allow changing the user
+        if 'user' in validated_data:
+            validated_data.pop('user')
+            
+        return super().update(instance, validated_data)
 
 class SubtaskSerializer(serializers.ModelSerializer):
     subTaskID = serializers.IntegerField(source='id', read_only=True)
@@ -54,7 +86,8 @@ class TaskSerializer(serializers.ModelSerializer):
         for contact_data in assigned_to_data:
             contact_id = contact_data.get('contactID')
             try:
-                contact = Contact.objects.get(id=contact_id)
+                # Only allow assigning contacts that belong to the current user
+                contact = Contact.objects.get(id=contact_id, user=user)
                 task.assigned_to.add(contact)
             except Contact.DoesNotExist:
                 pass
@@ -80,11 +113,14 @@ class TaskSerializer(serializers.ModelSerializer):
         # Update assigned contacts if provided
         if 'assignedTo' in self.initial_data:
             instance.assigned_to.clear()
+            user = self.context['request'].user
+            
             for contact_data in self.initial_data.get('assignedTo', []):
                 contact_id = contact_data.get('contactID')
                 if contact_id:
                     try:
-                        contact = Contact.objects.get(id=contact_id)
+                        # Only allow assigning contacts that belong to the current user
+                        contact = Contact.objects.get(id=contact_id, user=user)
                         instance.assigned_to.add(contact)
                     except Contact.DoesNotExist:
                         pass

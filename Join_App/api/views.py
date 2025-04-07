@@ -17,9 +17,19 @@ from rest_framework.permissions import IsAuthenticated
 #    permission_classes = [isOwner]
 
 class ContactViewSet(viewsets.ModelViewSet):
-    queryset = Contact.objects.all()
     serializer_class = ContactSerializer
-    permission_classes = [IsAuthenticated]  # Optional: Require authentication
+    permission_classes = [IsAuthenticated]  # Require authentication
+
+    def get_queryset(self):
+        # Filter contacts by authenticated user
+        if self.request.user.is_authenticated:
+            return Contact.objects.filter(user=self.request.user)
+        return Contact.objects.none()
+    
+    def get_serializer_context(self):
+        # Pass request to serializer for user access
+        context = super().get_serializer_context()
+        return context
 
     def get_serializer(self, *args, **kwargs):
         """
@@ -44,7 +54,7 @@ class ContactViewSet(viewsets.ModelViewSet):
 
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]  # Optional: Require authentication
+    permission_classes = [IsAuthenticated]  # Require authentication
     
     def get_queryset(self):
         # Filter tasks by authenticated user

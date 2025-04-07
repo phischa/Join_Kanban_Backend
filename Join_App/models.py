@@ -16,6 +16,7 @@ from django.contrib.auth import get_user_model
 #    name = models.CharField(max_length=20, default="", blank=True)
 
 class Contact(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='contacts')  # Added user field
     name = models.CharField(max_length=100)
     email = models.EmailField(max_length=255)
     phone = models.CharField(max_length=20, blank=True, null=True)
