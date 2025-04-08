@@ -1,1 +1,1 @@
-# Backend for Join_Kanban_App
+# Backend for Kanban App "Join"
