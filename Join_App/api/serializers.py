@@ -7,6 +7,7 @@ class ContactSerializer(serializers.ModelSerializer):
         model = Contact
         fields = ['id', 'name', 'email', 'phone', 'color', 'user']
         read_only_fields = ['id']
+        extra_kwargs = {'user': {'required': False}}
     
     def to_representation(self, instance):
         data = super().to_representation(instance)

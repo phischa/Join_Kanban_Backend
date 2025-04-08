@@ -18,7 +18,8 @@ from rest_framework.permissions import IsAuthenticated
 
 class ContactViewSet(viewsets.ModelViewSet):
     serializer_class = ContactSerializer
-    permission_classes = [IsAuthenticated]  # Require authentication
+    permission_classes = [IsAuthenticated]
+    queryset = Contact.objects.all()
 
     def get_queryset(self):
         # Filter contacts by authenticated user
@@ -46,10 +47,14 @@ class ContactViewSet(viewsets.ModelViewSet):
     
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
-        
+    
         if serializer.is_valid():
-            serializer.save()
-            return Response({"status": "success"}, status=status.HTTP_201_CREATED)
+            contact = serializer.save(user=request.user)
+            return Response({
+                "status": "success", 
+                "contactID": contact.id,
+                "message": "Contact created successfully"
+            }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class TaskViewSet(viewsets.ModelViewSet):
