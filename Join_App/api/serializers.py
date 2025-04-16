@@ -2,6 +2,9 @@ from rest_framework import serializers
 from Join_App.models import Task, Contact, Subtask
 from django.contrib.auth.models import User
 
+import logging
+logger = logging.getLogger(__name__)
+
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
@@ -34,14 +37,9 @@ class ContactSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
     
     def update(self, instance, validated_data):
-        # Get the authenticated user from the request context
         user = self.context['request'].user if 'request' in self.context else None
-        
-        # Only allow update if the contact belongs to the authenticated user
         if instance.user != user:
             raise serializers.ValidationError({"error": "You can only update your own contacts"})
-        
-        # Don't allow changing the user
         if 'user' in validated_data:
             validated_data.pop('user')
             
@@ -93,11 +91,12 @@ class TaskSerializer(serializers.ModelSerializer):
             except Contact.DoesNotExist:
                 pass
         
-        # Add subtasks
+        # Add subtasks - 'name' ist das transformierte Feld nach der Deserialisierung
         for subtask_data in subtasks_data:
             subtask_name = subtask_data.get('name')
             subtask_done = subtask_data.get('done', False)
-            Subtask.objects.create(task=task, name=subtask_name, done=subtask_done)
+            if subtask_name:  # Prüfung auf leere Namen
+                Subtask.objects.create(task=task, name=subtask_name, done=subtask_done)
         
         return task
     
@@ -112,11 +111,12 @@ class TaskSerializer(serializers.ModelSerializer):
         instance.save()
         
         # Update assigned contacts if provided
-        if 'assignedTo' in self.initial_data:
+        if 'assignedTo' in validated_data:
+            assigned_to_data = validated_data.get('assignedTo', [])
             instance.assigned_to.clear()
             user = self.context['request'].user
             
-            for contact_data in self.initial_data.get('assignedTo', []):
+            for contact_data in assigned_to_data:
                 contact_id = contact_data.get('contactID')
                 if contact_id:
                     try:
@@ -127,15 +127,16 @@ class TaskSerializer(serializers.ModelSerializer):
                         pass
         
         # Update subtasks if provided
-        if 'subtasks' in self.initial_data:
+        if 'subtasks' in validated_data:
+            subtasks_data = validated_data.get('subtasks', [])
             # Remove existing subtasks 
             instance.subtasks.all().delete()
             
-            # Add new subtasks
-            for subtask_data in self.initial_data.get('subtasks', []):
-                subtask_name = subtask_data.get('subTaskName')
+            # Add new subtasks - 'name' ist das transformierte Feld nach der Deserialisierung
+            for subtask_data in subtasks_data:
+                subtask_name = subtask_data.get('name')  # Transformiertes Feld
                 subtask_done = subtask_data.get('done', False)
-                if subtask_name:
+                if subtask_name:  # Prüfung auf leere Namen
                     Subtask.objects.create(
                         task=instance, 
                         name=subtask_name, 
@@ -143,7 +144,7 @@ class TaskSerializer(serializers.ModelSerializer):
                     )
         
         return instance
-
+        
 class UserSerializer(serializers.ModelSerializer):
     userID = serializers.IntegerField(source='id', read_only=True)
     name = serializers.CharField(source='username')
