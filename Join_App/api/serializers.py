@@ -71,31 +71,25 @@ class TaskSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         assigned_to_data = validated_data.pop('assignedTo', [])
         subtasks_data = validated_data.pop('subtasks', [])
-        
-        # Get the authenticated user from the request context
         user = self.context['request'].user if 'request' in self.context else None
-        
-        # Fallback to first user if not authenticated (for development/testing only)
-        if not user or not user.is_authenticated:
-            user = User.objects.first()
-            
         task = Task.objects.create(user=user, **validated_data)
-        
-        # Add contacts
+        missing_contacts = []
         for contact_data in assigned_to_data:
             contact_id = contact_data.get('contactID')
             try:
-                # Only allow assigning contacts that belong to the current user
                 contact = Contact.objects.get(id=contact_id, user=user)
                 task.assigned_to.add(contact)
             except Contact.DoesNotExist:
-                pass
+                logger.warning(
+                f"Kontakt mit ID {contact_id} konnte nicht zugewiesen werden - "
+                f"existiert nicht oder gehört nicht dem Benutzer {user.username}"
+            )
+            missing_contacts.append(contact_id)
         
-        # Add subtasks - 'name' ist das transformierte Feld nach der Deserialisierung
         for subtask_data in subtasks_data:
             subtask_name = subtask_data.get('name')
             subtask_done = subtask_data.get('done', False)
-            if subtask_name:  # Prüfung auf leere Namen
+            if subtask_name:
                 Subtask.objects.create(task=task, name=subtask_name, done=subtask_done)
         
         return task
@@ -115,28 +109,27 @@ class TaskSerializer(serializers.ModelSerializer):
             assigned_to_data = validated_data.get('assignedTo', [])
             instance.assigned_to.clear()
             user = self.context['request'].user
-            
+            missing_contacts = []
             for contact_data in assigned_to_data:
                 contact_id = contact_data.get('contactID')
                 if contact_id:
                     try:
-                        # Only allow assigning contacts that belong to the current user
                         contact = Contact.objects.get(id=contact_id, user=user)
                         instance.assigned_to.add(contact)
                     except Contact.DoesNotExist:
-                        pass
+                        logger.warning(
+                        f"Kontakt mit ID {contact_id} konnte nicht zugewiesen werden - "
+                        f"existiert nicht oder gehört nicht dem Benutzer {user.username}"
+                    )
+                    missing_contacts.append(contact_id)
         
-        # Update subtasks if provided
         if 'subtasks' in validated_data:
             subtasks_data = validated_data.get('subtasks', [])
-            # Remove existing subtasks 
             instance.subtasks.all().delete()
-            
-            # Add new subtasks - 'name' ist das transformierte Feld nach der Deserialisierung
             for subtask_data in subtasks_data:
-                subtask_name = subtask_data.get('name')  # Transformiertes Feld
+                subtask_name = subtask_data.get('name')
                 subtask_done = subtask_data.get('done', False)
-                if subtask_name:  # Prüfung auf leere Namen
+                if subtask_name:
                     Subtask.objects.create(
                         task=instance, 
                         name=subtask_name, 

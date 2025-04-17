@@ -85,19 +85,25 @@ class TaskViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(tasks, many=True)
         return Response(serializer.data)
     
-    def create(self, request):
-        serializer = self.get_serializer(data=request.data)
+    # In TaskViewSet in views.py
+def create(self, request):
+    serializer = self.get_serializer(data=request.data)
+    
+    if serializer.is_valid():
+        instance = serializer.save()
         
-        if serializer.is_valid():
-            instance = serializer.save()
+        # Falls die create-Methode missing_contacts zurückgibt
+        response_data = {"status": "success", "taskID": instance.id}
+        
+        # Wenn es fehlende Kontakte gibt, füge sie zur Antwort hinzu
+        if hasattr(instance, 'missing_contacts') and instance.missing_contacts:
+            response_data["warnings"] = {
+                "missing_contacts": instance.missing_contacts
+            }
             
-            if not isinstance(request.data, list) and hasattr(instance, 'id'):
-                return Response(
-                    {"status": "success", "taskID": instance.id}, 
-                    status=status.HTTP_201_CREATED
-                )
-            return Response({"status": "success"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(response_data, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
