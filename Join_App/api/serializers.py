@@ -68,6 +68,16 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = ['taskID', 'title', 'description', 'assignedTo', 'dueDate', 
                 'priority', 'category', 'subtasks', 'currentProgress']
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Stell sicher, dass assignedTo-Daten vorhanden sind
+        if not 'assignedTo' in data or not data['assignedTo']:
+            data['assignedTo'] = [
+                {'contactID': contact.id} 
+                for contact in instance.assigned_to.all()
+            ]
+        return data
+
     def create(self, validated_data):
         assigned_to_data = validated_data.pop('assignedTo', [])
         subtasks_data = validated_data.pop('subtasks', [])
