@@ -31,10 +31,10 @@ Before you begin, ensure you have the following installed:
 2. Create and activate a virtual environment:
    python -m venv venv
    
-   # On Windows
+   ## On Windows
    venv\Scripts\activate
    
-   # On macOS/Linux
+   ## On macOS/Linux
    source venv/bin/activate
 
 3. Install dependencies:
@@ -50,7 +50,7 @@ Before you begin, ensure you have the following installed:
 
 6. Create a superuser:
    python manage.py createsuperuser
-   
+
 ## Running the Application
 1. Start the development server:
    python manage.py runserver
