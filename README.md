@@ -25,7 +25,7 @@ Before you begin, ensure you have the following installed:
 
 ## Installation
 1. Clone the repository:
-   git clone https://github.com/yourusername/django-project.git
+   git clone https://github.com/phischa/Join_Kanban_Backend
    cd django-project
 
 2. Create and activate a virtual environment:
