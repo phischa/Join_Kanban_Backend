@@ -6,10 +6,17 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
-from django.contrib.auth.models import User  # Diese Zeile wurde hinzugefügt
+from django.contrib.auth.models import User
+from rest_framework.decorators import api_view, permission_classes
+import uuid
 import logging
 
 logger = logging.getLogger(__name__)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def guest_test(request):
+    return Response({"message": "Guest test endpoint works!"})
 
 class UserProfileList(generics.ListCreateAPIView):
     queryset = UserProfile.objects.all()
@@ -70,3 +77,28 @@ class CustomLoginView(ObtainAuthToken):
         else: 
             data = serializer.errors
         return Response(data)
+
+class GuestLoginView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        guest_username = f"guest_{uuid.uuid4().hex[:8]}"
+        temp_password = uuid.uuid4().hex
+        guest_user = User.objects.create_user(
+            username = guest_username,
+            email = f"{guest_username}@example.com",
+            password = temp_password
+        )
+        profile = guest_user.profile
+        profile.is_guest = True
+        profile.save()
+        
+        token, _ = Token.objects.get_or_create(user=guest_user)
+        
+        return Response({
+            'status': 'success',
+            'token': token.key,
+            'username': guest_username,
+            'email': f"{guest_username}@example.com",
+            'is_guest': True
+        })
