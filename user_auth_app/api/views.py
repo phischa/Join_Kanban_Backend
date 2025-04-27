@@ -16,20 +16,60 @@ logger = logging.getLogger(__name__)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def guest_test(request):
+    """
+    Test endpoint accessible to unauthenticated users.
+    
+    Args:
+        request: The HTTP request object.
+        
+    Returns:
+        Response: A success message indicating the endpoint works.
+    """
     return Response({"message": "Guest test endpoint works!"})
 
 class UserProfileList(generics.ListCreateAPIView):
+    """
+    API view for listing all user profiles or creating a new one.
+    
+    Provides GET (list all profiles) and POST (create profile) functionality.
+    """
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
 
 class UserProfileDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    API view for retrieving, updating, or deleting a specific user profile.
+    
+    Provides GET (retrieve), PUT/PATCH (update), and DELETE functionality
+    for individual profiles identified by their primary key.
+    """
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
 
 class RegistrationView(APIView):
+    """
+    API view for user registration.
+    
+    Handles user creation with validation for passwords and email uniqueness.
+    Returns an authentication token upon successful registration.
+    Accessible to unauthenticated users.
+    """
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """
+        Process a registration request.
+        
+        Validates user data, creates a new user, and returns an auth token.
+        Formats validation errors in a frontend-friendly structure.
+        
+        Args:
+            request: The HTTP request containing registration data.
+            
+        Returns:
+            Response: Success response with token, username, email, and userID,
+            or error response with validation details.
+        """
         serializer = RegistrationSerializer(data=request.data)
         
         if serializer.is_valid():
@@ -60,9 +100,27 @@ class RegistrationView(APIView):
             }, status=400)
     
 class CustomLoginView(ObtainAuthToken):
+    """
+    Custom login view that extends Django REST framework's ObtainAuthToken.
+    
+    Provides token-based authentication with a simplified response structure.
+    Accessible to unauthenticated users.
+    """
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """
+        Process a login request.
+        
+        Validates credentials and returns user information with an auth token.
+        
+        Args:
+            request: The HTTP request containing login credentials.
+            
+        Returns:
+            Response: User information and token on success,
+            or validation errors on failure.
+        """
         serializer = self.serializer_class(data=request.data)
         data = {}
 
@@ -79,9 +137,29 @@ class CustomLoginView(ObtainAuthToken):
         return Response(data)
 
 class GuestLoginView(APIView):
+    """
+    API view for guest user login.
+    
+    Creates a temporary user account with a unique username and random password.
+    Returns an authentication token for the guest user.
+    Accessible to unauthenticated users.
+    """
     permission_classes = [AllowAny]
     
     def post(self, request):
+        """
+        Process a guest login request.
+        
+        Creates a temporary user with a UUID-based username and random password.
+        Marks the user profile as a guest account.
+        
+        Args:
+            request: The HTTP request object.
+            
+        Returns:
+            Response: Success response with token, username, email,
+            and guest status flag.
+        """
         guest_username = f"guest_{uuid.uuid4().hex[:8]}"
         temp_password = uuid.uuid4().hex
         guest_user = User.objects.create_user(

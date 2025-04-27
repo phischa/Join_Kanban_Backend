@@ -4,19 +4,37 @@ from django.db.models import Q
 
 class EmailOrUsernameModelBackend(ModelBackend):
     """
-    Authentifizierung mit E-Mail oder Benutzername
+    Authentication backend that allows users to log in with either email or username.
+    
+    Extends Django's default ModelBackend to support authentication with
+    both username and email address using the same login field.
     """
     def authenticate(self, request, username=None, password=None, **kwargs):
+        """
+        Authenticate a user based on either username or email address.
+        
+        Attempts to find a user with the provided credential matching either 
+        their username or email (case-insensitive), then verifies the password.
+        
+        Args:
+            request: The HTTP request (may be None)
+            username: The credential provided (could be username or email)
+            password: The password to verify
+            **kwargs: Additional keyword arguments
+            
+        Returns:
+            User: The authenticated user instance if successful, or None if authentication fails
+        """
         UserModel = get_user_model()
         
-        # Versuche den Benutzer anhand des Benutzernamens oder der E-Mail zu finden
+        # Try to find the user by username or email
         try:
-            # Verwende Q-Objekte für OR-Abfrage (Benutzername ODER E-Mail)
+            # Use Q objects for OR query (username OR email)
             user = UserModel.objects.filter(
                 Q(username__iexact=username) | Q(email__iexact=username)
             ).first()
             
-            # Prüfe das Passwort, wenn ein Benutzer gefunden wurde
+            # Check password if a user was found
             if user and user.check_password(password):
                 return user
                 
