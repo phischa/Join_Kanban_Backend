@@ -12,7 +12,7 @@ The app allows users to create customizable boards, organize tasks, assigne task
 - django-phonenumber-field 8.0.0
 - phonenumbers 8.13.53
 - python-dotenv 1.1.0
-- Database (SQLite/PostgreSQL)
+- Database (SQLite)
 - HTML/CSS/JavaScript
 
 ## Prerequisites
@@ -43,7 +43,6 @@ Before you begin, ensure you have the following installed:
 4. Create a `.env` file in the project root and add your environment variables:
    DEBUG=True
    SECRET_KEY=your_secret_key
-   DATABASE_URL=postgres://user:password@localhost:5432/dbname
 
 5. Run migrations:
    python manage.py migrate
