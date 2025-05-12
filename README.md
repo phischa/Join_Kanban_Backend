@@ -20,7 +20,6 @@ Before you begin, ensure you have the following installed:
 - Python 3.8 or higher
 - pip (Python package manager)
 - virtualenv (recommended)
-- PostgreSQL (or your database of choice)
 - Git
 
 ## Installation
